@@ -1,0 +1,6 @@
+@VagonTest.Api_HostAddress = http://localhost:5008
+
+GET {{VagonTest.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

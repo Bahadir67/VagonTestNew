@@ -1,0 +1,87 @@
+# ---------- .NET ----------
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userprefs
+*.pidb
+*.swp
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.pdb
+*.dll.config
+project.lock.json
+project.fragment.lock.json
+artifacts/
+publish/
+TestResults/
+*.coverage
+*.coveragexml
+*.opencover.xml
+
+# ---------- Node / npm / pnpm / yarn ----------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.yarn-integrity
+.parcel-cache/
+
+# ---------- Vite ----------
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+frontend/*.local
+frontend/stats.html
+
+# ---------- Tauri / Rust ----------
+frontend/src-tauri/target/
+frontend/src-tauri/gen/
+frontend/src-tauri/Cargo.lock
+frontend/src-tauri/WixTools/
+**/*.rs.bk
+
+# ---------- OS ----------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+
+# ---------- IDE ----------
+.idea/
+*.iml
+.fleet/
+
+# ---------- Antigravity ----------
+.antigravitycli/
+
+# ---------- Project-specific ----------
+# SQLite databases (test data — should not be committed)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+# Local environment overrides
+appsettings.Local.json
+appsettings.Development.json
+.env
+.env.local
+# Local logs
+logs/
+*.log
+# Published backend artifacts copied into src-tauri/binaries
+frontend/src-tauri/binaries/
+
+# Local-only
+.user-path-backup.txt
+.claude/settings.local.json
+tauri-dev.*.log

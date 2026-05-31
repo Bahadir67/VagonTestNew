@@ -1,0 +1,14 @@
+/* Minimal reset. The Test Kontrol design ships its own styles. */
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+#root {
+  overflow: hidden;
+}

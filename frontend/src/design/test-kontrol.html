@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Test Kontrol</title>
+<style>
+  :root {
+    --tb-top: #6db3f2; --tb-bot: #2f7fd1;
+    --side-top: #e8f1fb; --side-bot: #c2d8f0; --side-border: #8fb4dc;
+    --ink: #11355c; --ink-soft: #2c5a8a;
+    --btn-top: #ffffff; --btn-bot: #e4eef9; --btn-border: #9cbbdc;
+    --btn-shadow: rgba(20, 60, 110, 0.22);
+    --card-head-top: #eef4fb; --card-head-bot: #d7e4f2;
+    --yellow: #fbf6cf; --yellow-border: #d8cf8a;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: radial-gradient(1200px 700px at 50% -10%, #3a4655, #232a33 60%, #1b2027 100%);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  #stage { width: 1100px; height: 650px; transform-origin: center center; }
+  .window {
+    width: 100%; height: 100%; border-radius: 9px; background: #f3f7fc;
+    border: 1px solid #1f4f86; position: relative;
+    box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 30px 70px rgba(0,0,0,.55), 0 8px 22px rgba(0,0,0,.4);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  /* Title bar */
+  .titlebar {
+    height: 34px; flex: none; display: flex; align-items: center; gap: 8px;
+    padding: 0 10px 0 8px; background: linear-gradient(180deg, var(--tb-top), var(--tb-bot));
+    border-bottom: 1px solid #1b4f87; position: relative; z-index: 30;
+  }
+  .titlebar::after { content:""; position:absolute; left:0; right:0; top:0; height:50%;
+    background: linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,0)); pointer-events:none; }
+  .titlebar .tb-title { color:#fff; font-size:12px; font-weight:600; letter-spacing:.3px; text-shadow:0 1px 1px rgba(0,0,0,.4); }
+  .tb-unit { margin-left:auto; display:flex; align-items:center; gap:6px; color:#fff; font-size:11px; font-weight:600; text-shadow:0 1px 1px rgba(0,0,0,.4); }
+  .tb-unit select { height:22px; border-radius:4px; border:1px solid #2566a8; background:#fff; color:#244a73; font-size:11px; font-weight:700; padding:0 4px; cursor:pointer; }
+  .tb-unit .tb-fs { height:22px; min-width:26px; border-radius:4px; border:1px solid rgba(255,255,255,.55);
+    background: linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,.12)); color:#0e2c4d; font-size:13px; cursor:pointer; line-height:1; padding:0 4px; }
+  .tb-unit .tb-fs:hover { background: linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.28)); }
+
+  .hamburger {
+    width:32px; height:26px; border-radius:5px; border:1px solid rgba(255,255,255,.55);
+    background: linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,.12));
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; padding:0;
+  }
+  .hamburger:hover { background: linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.28)); }
+  .hamburger span { display:block; width:18px; height:2.4px; border-radius:2px; background:#fff;
+    box-shadow:0 1px 1px rgba(0,0,0,.35); transition: transform .18s ease, opacity .18s ease; }
+  .hamburger.open span:nth-child(1) { transform: translateY(6.4px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity:0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-6.4px) rotate(-45deg); }
+
+  /* Menu */
+  .menu-panel {
+    position:absolute; top:38px; left:6px; width:230px; z-index:40; padding:9px;
+    border:1px solid var(--side-border); border-radius:8px;
+    background: linear-gradient(180deg, var(--side-top), var(--side-bot));
+    box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 14px 32px rgba(0,0,0,.4);
+    display:flex; flex-direction:column; gap:8px; transform-origin:top left;
+    transition: opacity .14s ease, transform .14s ease;
+    opacity:0; transform: scale(.96) translateY(-6px); pointer-events:none;
+  }
+  .menu-panel.open { opacity:1; transform: scale(1) translateY(0); pointer-events:auto; }
+  .nav-btn {
+    display:flex; align-items:center; gap:10px; height:42px; padding:0 10px; width:100%;
+    border-radius:7px; border:1px solid var(--btn-border);
+    background: linear-gradient(180deg, var(--btn-top), var(--btn-bot));
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 2px 4px var(--btn-shadow);
+    color:var(--ink); font-weight:700; font-size:12.5px; cursor:pointer; text-align:left; user-select:none;
+    transition: transform .04s ease, background .12s ease;
+  }
+  .nav-btn:hover { background: linear-gradient(180deg, #ffffff, #eef5fd); }
+  .nav-btn:active { transform: translateY(1px); }
+  .nav-btn.active { background: linear-gradient(180deg, #d6e9ff, #b7d6f6); border-color:#5a93cf;
+    box-shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 0 0 1px rgba(90,147,207,.4), 0 2px 5px var(--btn-shadow); }
+  .nav-btn .ico { flex:none; width:26px; height:26px; display:flex; align-items:center; justify-content:center; }
+  .nav-btn .lbl { flex:1; }
+
+  /* Body */
+  .body { flex:1; display:flex; flex-direction:column; min-height:0; padding:7px; gap:7px;
+    background: linear-gradient(180deg, #dce8f6, #c9dcf0); }
+  .content { flex:1; min-height:0; border:1px solid var(--side-border); border-radius:7px;
+    background: linear-gradient(180deg, #fbfdff, #eef4fb); box-shadow:0 1px 0 rgba(255,255,255,.7) inset;
+    overflow:auto; position:relative; }
+  .page { display:none; padding:18px 20px 22px; }
+  .page.active { display:block; }
+  .page-head { display:flex; align-items:baseline; gap:12px; border-bottom:1px solid #cfdded; padding-bottom:10px; margin-bottom:16px; }
+  .page-head h2 { margin:0; font-size:18px; color:var(--ink); font-weight:800; letter-spacing:.2px; }
+  .page-head .sub { font-size:12px; color:#6f8aa6; font-style:italic; }
+
+  /* Buttons / inputs */
+  .btn { height:30px; padding:0 14px; border-radius:6px; border:1px solid var(--btn-border);
+    background: linear-gradient(180deg, #ffffff, #e4eef9); color:var(--ink); font-weight:700; font-size:12px; cursor:pointer;
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 1px 3px var(--btn-shadow); }
+  .btn:hover { background: linear-gradient(180deg, #ffffff, #eef5fd); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: linear-gradient(180deg, #5aa0e6, #2f7fd1); border-color:#2566a8; color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.3); }
+  .btn.ghost { background: linear-gradient(180deg, #f5f9fd, #e7eef6); }
+  .btn.danger { background: linear-gradient(180deg, #ef7a7a, #d33b3b); border-color:#b02525; color:#fff; }
+  .toolbar { display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .toolbar label { font-size:12px; font-weight:700; color:var(--ink-soft); display:flex; align-items:center; gap:7px; }
+  input[type=text], input[type=number] { height:28px; border:1px solid #aebfd2; border-radius:5px; padding:0 8px;
+    font-size:12px; color:#244a73; background:#fff; box-shadow: inset 0 1px 2px rgba(0,0,0,.1); }
+  input:focus { outline:none; border-color:#5a93cf; box-shadow: inset 0 1px 2px rgba(0,0,0,.1), 0 0 0 2px rgba(90,147,207,.25); }
+
+  /* Cards */
+  .card { border:1px solid #b9cbe0; border-radius:7px; overflow:hidden;
+    background: linear-gradient(180deg,#ffffff,#f4f8fc);
+    box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 2px 5px rgba(20,60,110,.12); }
+  .card-head { background: linear-gradient(180deg, var(--card-head-top), var(--card-head-bot));
+    border-bottom:1px solid #b9cbe0; padding:7px 11px; font-size:12px; font-weight:700; color:var(--ink);
+    display:flex; align-items:center; justify-content:space-between; }
+  .card-body { padding:11px; display:flex; flex-direction:column; gap:9px; }
+  .field { display:flex; flex-direction:column; gap:3px; }
+  .field .flabel { font-size:11px; font-weight:700; color:var(--ink-soft); font-style:italic; }
+  .field .fval { height:28px; border-radius:5px; border:1px solid #aebfd2; background:#fbfdff;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.12); display:flex; align-items:center; justify-content:flex-end; gap:5px; padding:0 9px;
+    font-size:12.5px; font-weight:700; color:#244a73; }
+  .field .fval.kgf { background: var(--yellow); border-color: var(--yellow-border); }
+  .field .fval.hl { background: var(--yellow); border-color: var(--yellow-border); }
+  .field .fval .unit { font-weight:600; color:#7b8aa0; font-size:11px; }
+  .valf { display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:700; color:var(--ink-soft); font-style:italic; }
+
+  .dot { width:11px; height:11px; border-radius:50%; flex:none; box-shadow: inset 0 1px 1px rgba(255,255,255,.5), 0 1px 2px rgba(0,0,0,.25); }
+  .dot.ok  { background: radial-gradient(circle at 40% 30%, #8fe39a, #2faa45); }
+  .dot.warn{ background: radial-gradient(circle at 40% 30%, #ffd27a, #e69400); }
+  .dot.err { background: radial-gradient(circle at 40% 30%, #ff9b9b, #d62828); }
+
+  .sec-title { font-size:13px; font-weight:800; color:var(--ink); margin:20px 0 10px; padding-left:2px;
+    border-left:3px solid #5a93cf; padding-left:8px; }
+  .sec-title:first-child { margin-top:0; }
+
+  /* Data table */
+  table.grid { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.grid th { text-align:left; background: linear-gradient(180deg,#eef4fb,#dce7f3); color:var(--ink);
+    font-weight:700; padding:8px 10px; border:1px solid #c2d2e4; }
+  table.grid td { padding:7px 10px; border:1px solid #d7e1ec; color:#33506f; }
+  table.grid tr:nth-child(even) td { background:#f6f9fc; }
+  table.grid input { width:100%; height:26px; }
+
+  /* ===== Profil editor plot ===== */
+  .profil-wrap { display:flex; gap:16px; align-items:flex-start; }
+  .plot-card { position:relative; border:1px solid #b9cbe0; border-radius:7px;
+    background: linear-gradient(180deg,#ffffff,#f6f9fc);
+    box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 2px 6px rgba(20,60,110,.12); padding:8px 10px 4px 8px; }
+  svg#plot { display:block; width:700px; height:360px; cursor:crosshair; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .plot-card { -webkit-user-select:none; user-select:none; }
+  #plot text { user-select:none; -webkit-user-select:none; }
+  #plot line.grid { stroke:#e6edf4; stroke-width:1; }
+  #plot line.axis { stroke:#9bb1c7; stroke-width:1.4; }
+  #plot text.ylab { fill:#5f7d9c; font-size:10px; text-anchor:end; }
+  #plot text.xlab { fill:#5f7d9c; font-size:10px; text-anchor:middle; }
+  #plot polyline.profline { fill:none; stroke:#2f7fd1; stroke-width:2.4; stroke-linejoin:round; }
+  #plot polygon.proffill { fill:rgba(47,127,209,.10); stroke:none; }
+  #plot circle.ppoint { fill:#fff; stroke:#2f7fd1; stroke-width:2.2; cursor:grab; }
+  #plot circle.ppoint:hover { fill:#d6e9ff; }
+  .axis-y-title { position:absolute; left:2px; top:8px; height:312px; writing-mode:vertical-rl; transform:rotate(180deg);
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--ink-soft); }
+  .axis-x-title { text-align:center; margin-left:58px; font-size:11px; font-weight:700; color:var(--ink-soft); padding:2px 0 2px; }
+  .plot-tip { position:absolute; pointer-events:none; background:rgba(17,53,92,.94); color:#fff; font-size:11px; font-weight:700;
+    padding:5px 9px; border-radius:5px; white-space:nowrap; transform:translate(14px,-50%); display:none; z-index:5;
+    box-shadow:0 3px 8px rgba(0,0,0,.35); }
+  .plot-tip .r { display:flex; gap:6px; justify-content:space-between; }
+  .plot-tip .k { color:#9fccf5; }
+  .points-panel { width:230px; align-self:stretch; border:1px solid #b9cbe0; border-radius:7px;
+    background: linear-gradient(180deg,#ffffff,#f4f8fc); box-shadow:0 1px 0 rgba(255,255,255,.8) inset; padding:10px 12px; }
+  .points-panel h3 { margin:0 0 6px; font-size:13px; color:var(--ink); display:flex; justify-content:space-between; align-items:center; }
+  .points-panel h3 .cnt { font-size:11px; color:#7b8aa0; font-weight:600; }
+  .pt-row { display:flex; align-items:center; gap:8px; font-size:12px; color:#33506f; padding:5px 0; border-bottom:1px dashed #dbe4ee; }
+  .pt-row .pt-t { width:54px; color:var(--ink-soft); font-weight:700; }
+  .pt-row .pt-f { flex:1; font-weight:700; text-align:right; }
+  .pt-del { border:none; background:none; color:#c0392b; cursor:pointer; font-size:13px; line-height:1; padding:2px; }
+  .pt-del:hover { color:#8e1414; }
+  .pt-hint { font-size:11px; color:#7b8aa0; margin-top:10px; font-style:italic; line-height:1.5; }
+
+  /* ===== Lift ===== */
+  .lift-row { display:flex; gap:16px; }
+  .lift-unit { flex:1; border:1px solid #b9cbe0; border-radius:7px;
+    background: linear-gradient(180deg,#ffffff,#f3f8fc);
+    box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 2px 5px rgba(20,60,110,.1);
+    padding:11px 12px 13px; display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .lift-name { font-weight:800; color:var(--ink); font-size:13px; }
+  .lift-track { width:50px; height:210px; border:1px solid #aebfd2; border-radius:8px;
+    background: linear-gradient(180deg,#eef3f9,#dde6f0); box-shadow: inset 0 1px 4px rgba(0,0,0,.18); position:relative; }
+  .lift-marker { position:absolute; left:6px; right:6px; height:24px; border-radius:5px;
+    background: linear-gradient(180deg,#9fd0f5,#3f86c9); border:1px solid #2c6ba8;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 2px 4px rgba(0,0,0,.25); transition: bottom .35s ease; bottom:4%;
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; font-weight:700; }
+  .lift-read { font-size:21px; font-weight:800; color:var(--ink); line-height:1; }
+  .lift-read small { font-size:12px; font-weight:600; color:#6f8aa6; margin-left:3px; }
+  .lift-tgt { display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--ink-soft); }
+  .lift-tgt input { width:64px; text-align:right; }
+  .lift-unit .btn { width:100%; }
+
+  /* ===== Sensor tiles ===== */
+  .sensor-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
+  .sensor-tile { border:1px solid #b9cbe0; border-radius:7px; padding:11px 13px;
+    background: linear-gradient(180deg,#ffffff,#f3f8fc); box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 2px 4px rgba(20,60,110,.1); }
+  .sensor-tile .name { font-size:11.5px; font-weight:700; color:var(--ink-soft); display:flex; align-items:center; gap:7px; margin-bottom:7px; font-style:italic; }
+  .sensor-tile .val { font-size:22px; font-weight:800; color:var(--ink); }
+  .sensor-tile .val small { font-size:12px; font-weight:600; color:#7b8aa0; margin-left:3px; }
+  .valf-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
+  .valf-tile { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid #b9cbe0; border-radius:7px;
+    padding:13px 15px; background: linear-gradient(180deg,#ffffff,#f3f8fc); box-shadow:0 1px 0 rgba(255,255,255,.8) inset;
+    font-size:12.5px; font-weight:700; color:var(--ink); }
+
+  /* Empty state */
+  .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    min-height:340px; color:#9fb4cb; font-style:italic; font-size:13px; }
+  .empty-state .es-ico { width:54px; height:54px; border-radius:50%; border:2px dashed #b9cbe0; display:flex; align-items:center; justify-content:center; color:#b9cbe0; }
+
+  /* Custom checkbox */
+  .chk { display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color:var(--ink); cursor:pointer; user-select:none; }
+  .chk input { position:absolute; opacity:0; width:0; height:0; }
+  .chk .box { width:16px; height:16px; border-radius:4px; border:1px solid #8fb0d4; background:linear-gradient(180deg,#fff,#eaf2fb); box-shadow: inset 0 1px 2px rgba(0,0,0,.08); position:relative; flex:none; transition: background .12s ease, border-color .12s ease; }
+  .chk input:checked + .box { background:linear-gradient(180deg,#5aa0e6,#2f7fd1); border-color:#2566a8; }
+  .chk input:checked + .box::after { content:""; position:absolute; left:5px; top:2px; width:4px; height:8px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+  .chk input:focus-visible + .box { box-shadow: 0 0 0 2px rgba(90,147,207,.4); }
+  .chk.sm { font-size:11px; }
+
+  /* Sync bar */
+  .sync-bar { display:flex; align-items:center; gap:14px; padding:8px 14px; margin-bottom:12px; border:1px solid #b9cbe0; border-radius:7px;
+    background: linear-gradient(180deg,#eef4fb,#dbe7f4); box-shadow:0 1px 0 rgba(255,255,255,.7) inset; }
+  .sync-note { font-size:11.5px; color:#6f8aa6; font-style:italic; }
+
+  /* Cylinder */
+  .lift-top { display:flex; align-items:center; justify-content:space-between; width:100%; }
+  .cyl { display:flex; justify-content:center; }
+  .cyl svg { width:110px; height:198px; display:block; }
+  .cyl text { font-family:"Segoe UI", Tahoma, sans-serif; }
+  .lift-lc { font-size:11.5px; font-weight:700; color:var(--ink-soft); }
+  .lift-lc b { color:#244a73; }
+
+  /* Sub-tabs */
+  .subtabs { display:flex; gap:4px; margin-bottom:16px; border-bottom:1px solid #b9cbe0; }
+  .subtab { border:1px solid #b9cbe0; border-bottom:none; background: linear-gradient(180deg,#eef4fb,#dbe7f4);
+    padding:8px 16px; border-radius:7px 7px 0 0; font-size:12.5px; font-weight:700; color:var(--ink-soft); cursor:pointer; margin-bottom:-1px; }
+  .subtab:hover { background: linear-gradient(180deg,#f4f9ff,#e6eef8); }
+  .subtab.active { background: linear-gradient(180deg,#ffffff,#f4f9ff); color:var(--ink); border-color:#9cbbdc; border-bottom:1px solid #fff; }
+  .subpage { display:none; } .subpage.active { display:block; }
+
+  /* ===== Tampon-Kanca ===== */
+  .card-grid { display:grid; gap:12px; }
+  .tk-toolbar { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .tk-hint { font-size:11.5px; color:#6f8aa6; font-style:italic; margin-left:4px; }
+  .rig-card { border:1px solid #b9cbe0; border-radius:7px; background: linear-gradient(180deg,#fbfdff,#eef4fb);
+    box-shadow:0 1px 0 rgba(255,255,255,.8) inset; padding:5px 12px; margin-bottom:10px; }
+  .rig-card svg { width:100%; height:auto; display:block; }
+  .rig-card text { font-family:"Segoe UI", Tahoma, sans-serif; }
+  .tk-modebar { margin-bottom:14px; }
+  .segmented { display:inline-flex; border:1px solid #9cbbdc; border-radius:7px; overflow:hidden; box-shadow:0 1px 2px rgba(20,60,110,.12); }
+  .segmented .seg { border:none; background: linear-gradient(180deg,#f4f9ff,#e3edf8); color:var(--ink-soft); font-weight:700; font-size:12.5px; padding:8px 18px; cursor:pointer; border-right:1px solid #cdd9e6; }
+  .segmented .seg:last-child { border-right:none; }
+  .segmented .seg.active { background: linear-gradient(180deg,#5aa0e6,#2f7fd1); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.25); }
+  .segmented.sm .seg { padding:6px 13px; font-size:11.5px; }
+  .btn.sm { height:26px; padding:0 11px; font-size:11.5px; }
+  .cap { font-size:11px; font-weight:800; color:#fff; background:#2f7fd1; border-radius:4px; padding:2px 8px; }
+  .cap.k { background:#c0392b; }
+  .ro-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:10px; }
+  .ro { display:flex; flex-direction:column; gap:2px; }
+  .ro .rl { font-size:10.5px; font-weight:700; color:var(--ink-soft); font-style:italic; }
+  .ro .rv { height:26px; border:1px solid #aebfd2; border-radius:5px; background:#fbfdff; box-shadow:inset 0 1px 2px rgba(0,0,0,.1);
+    display:flex; align-items:center; justify-content:flex-end; padding:0 8px; font-size:12px; font-weight:700; color:#244a73; }
+  .ro .rv.kgf { background: var(--yellow); border-color: var(--yellow-border); }
+  .ctl-row { display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-top:8px; }
+  .ctl-row .lbl { width:52px; flex:none; }
+  .ctl-row input[type=number] { width:58px; }
+  .tk-status { margin-top:6px; font-size:12px; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:9px; }
+  .tk-prog { height:10px; border-radius:5px; background:#dde6f0; overflow:hidden; border:1px solid #aebfd2; }
+  .tk-prog > i { display:block; height:100%; width:0; background: linear-gradient(90deg,#6db95f,#2faa45); transition: width .2s ease; }
+
+  /* Modal */
+  .modal-overlay { position:absolute; inset:0; background:rgba(18,40,70,.4); display:flex; align-items:center; justify-content:center; z-index:60; }
+  .modal { width:880px; max-width:94%; max-height:88%; display:flex; flex-direction:column; overflow:hidden;
+    background: linear-gradient(180deg,#f6faff,#e9f1fa); border:1px solid #7fa6d0; border-radius:9px; box-shadow:0 20px 50px rgba(0,0,0,.45); }
+  .modal-head { display:flex; align-items:center; justify-content:space-between; padding:0 8px 0 14px; height:38px; flex:none;
+    background: linear-gradient(180deg, var(--tb-top), var(--tb-bot)); color:#fff; font-size:13px; font-weight:700; text-shadow:0 1px 1px rgba(0,0,0,.35); }
+  .modal-close { width:26px; height:24px; border-radius:5px; border:1px solid rgba(255,255,255,.55);
+    background: linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,.12)); color:#0e2c4d; font-size:13px; cursor:pointer; }
+  .modal-close:hover { background: linear-gradient(180deg,#ff7a7a,#d22); border-color:#a01; color:#fff; }
+  .modal-body { padding:16px; overflow:auto; }
+
+  /* Live test overlay (transparent) */
+  .tk-live { position:absolute; inset:0; z-index:58; pointer-events:none; display:flex; align-items:flex-end; justify-content:center; padding:0 0 16px; }
+  .live-panel { pointer-events:auto; width:720px; max-width:94%; background:rgba(244,249,255,.84);
+    backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid #8fb4dc; border-radius:10px;
+    box-shadow:0 16px 44px rgba(0,0,0,.32); padding:12px 14px; }
+  .live-head { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+  .live-title { font-weight:800; color:var(--ink); font-size:13px; }
+  .live-clock { font-size:12px; font-weight:700; color:#2c5a8a; }
+  .live-actions { margin-left:auto; display:flex; gap:8px; }
+  .live-legend { display:flex; flex-wrap:wrap; gap:10px 16px; margin-bottom:6px; font-size:11px; font-weight:700; color:var(--ink-soft); }
+  .live-legend span { display:inline-flex; align-items:center; }
+  .live-legend i { display:inline-block; width:16px; border-top:3px solid; margin-right:5px; }
+  .live-legend i.dash { border-top-style:dashed; }
+  .live-chart { width:100%; height:196px; display:block; background:rgba(255,255,255,.65); border:1px solid #cdd9e6; border-radius:6px; }
+  .live-foot { display:flex; align-items:center; gap:10px; margin-top:8px; }
+  .live-status { font-size:12px; font-weight:700; color:var(--ink); }
+  .live-foot .btn { margin-left:auto; }
+  .live-pill { pointer-events:auto; display:flex; align-items:center; gap:10px; background:rgba(244,249,255,.92);
+    backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid #8fb4dc; border-radius:24px;
+    padding:8px 14px; box-shadow:0 8px 24px rgba(0,0,0,.28); font-size:12px; font-weight:700; color:var(--ink); }
+  .btn.sm.ghost { background:linear-gradient(180deg,#f5f9fd,#e7eef6); }
+  #liveChart line.g { stroke:#e3ebf3; stroke-width:1; }
+  #liveChart line.ax { stroke:#9bb1c7; stroke-width:1.2; }
+  #liveChart text { fill:#5f7d9c; font-size:9px; font-family:"Segoe UI",sans-serif; }
+
+  /* Motor bar */
+  .motorbar { flex:none; height:66px; border:1px solid var(--side-border); border-radius:7px;
+    background: linear-gradient(180deg, #e8f1fb, #cdddf0); box-shadow:0 1px 0 rgba(255,255,255,.7) inset;
+    display:flex; align-items:center; gap:18px; padding:0 18px; }
+  .motorbar .mtitle { font-style:italic; font-weight:800; color:var(--ink-soft); font-size:15px; letter-spacing:2px; }
+  .motor-btns { display:flex; gap:14px; }
+  .pwr { width:46px; height:46px; border-radius:50%; border:1px solid rgba(0,0,0,.25); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 0 rgba(255,255,255,.4) inset, 0 -7px 12px rgba(0,0,0,.18) inset, 0 3px 6px rgba(0,0,0,.3);
+    transition: transform .05s ease, filter .15s ease; position:relative; }
+  .pwr:active { transform: translateY(2px); }
+  .pwr.stop  { background: radial-gradient(circle at 50% 30%, #ff8a8a, #d62121 70%); }
+  .pwr.start { background: radial-gradient(circle at 50% 30%, #93e69a, #1f9e34 70%); }
+  .pwr svg { color:#fff; filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+  .pwr.dim { filter: grayscale(.55) brightness(.92); opacity:.85; }
+  .pwr.on-ring.stop  { box-shadow:0 0 0 3px rgba(214,33,33,.32), 0 2px 0 rgba(255,255,255,.4) inset, 0 -7px 12px rgba(0,0,0,.18) inset, 0 3px 6px rgba(0,0,0,.3); }
+  .pwr.on-ring.start { box-shadow:0 0 0 3px rgba(31,158,52,.35), 0 2px 0 rgba(255,255,255,.4) inset, 0 -7px 12px rgba(0,0,0,.18) inset, 0 3px 6px rgba(0,0,0,.3); }
+  .motor-status { display:flex; align-items:center; gap:9px; margin-left:auto; font-size:13px; font-weight:700; color:var(--ink); }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <div class="window" data-screen-label="Test Kontrol Penceresi">
+
+      <!-- Title bar -->
+      <div class="titlebar">
+        <button class="hamburger" id="hamburger" aria-label="Menü" aria-expanded="false"><span></span><span></span><span></span></button>
+        <div class="tb-title" id="tbTitle">Profil Editör</div>
+        <div class="tb-unit">
+          <span>Birim:</span>
+          <select id="unitSel">
+            <option value="kgF">kgF — Kilogram Kuvvet</option>
+            <option value="tF">tF — Ton Kuvvet</option>
+            <option value="N">N — Newton</option>
+            <option value="kN">kN — Kilonewton</option>
+          </select>
+          <button class="tb-fs" id="fsBtn" title="Tam ekran (aç/kapat)" aria-label="Tam ekran">⛶</button>
+        </div>
+
+        <!-- Menu -->
+        <div class="menu-panel" id="menuPanel">
+          <button class="nav-btn active" data-page="profil">
+            <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M4 19 V5" stroke="#3f6ea5" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M4 19 H20" stroke="#3f6ea5" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M5 15 L10 10 L13 13 L19 6" stroke="#c0392b" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="10" cy="10" r="1.6" fill="#c0392b"/><circle cx="13" cy="13" r="1.6" fill="#c0392b"/>
+            </svg></span>
+            <span class="lbl">Profil Editör</span>
+          </button>
+          <button class="nav-btn" data-page="lift">
+            <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <rect x="6.5" y="3.5" width="11" height="17" rx="1.5" fill="#eef3f9" stroke="#3f6ea5" stroke-width="1.4"/>
+              <path d="M12 7 L9.5 10 H14.5 Z" fill="#1f9e34"/><path d="M12 17 L9.5 14 H14.5 Z" fill="#c0392b"/>
+            </svg></span>
+            <span class="lbl">Lift Kontrol</span>
+          </button>
+          <button class="nav-btn" data-page="tampon">
+            <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <rect x="3.5" y="8" width="9" height="8" rx="1" fill="#dfe9f4" stroke="#3f6ea5" stroke-width="1.4"/>
+              <rect x="12.5" y="10.5" width="5" height="3" fill="#a9762e"/>
+              <path d="M17.5 12 q3 0 3 -3 v-2" stroke="#c0392b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            </svg></span>
+            <span class="lbl">Tampon-Kanca Kontrol</span>
+          </button>
+          <button class="nav-btn" data-page="sensor">
+            <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="8" fill="#eef3f9" stroke="#3f6ea5" stroke-width="1.4"/>
+              <path d="M12 12 L16 8" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round"/>
+              <circle cx="12" cy="12" r="1.4" fill="#11355c"/>
+            </svg></span>
+            <span class="lbl">Sensörler</span>
+          </button>
+          <button class="nav-btn" data-page="ariza">
+            <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3.5 L21 19.5 L3 19.5 Z" fill="#ffd23f" stroke="#b8860b" stroke-width="1.3" stroke-linejoin="round"/>
+              <rect x="11" y="9" width="2" height="6" rx="1" fill="#5a3d00"/><rect x="11" y="16.4" width="2" height="2" rx="1" fill="#5a3d00"/>
+            </svg></span>
+            <span class="lbl">Arıza ve Uyarılar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="body">
+        <main class="content" id="content" data-screen-label="İçerik Alanı">
+
+          <!-- PROFİL EDİTÖR -->
+          <section class="page active" id="page-profil" data-screen-label="Profil Editör">
+            <div class="page-head"><h2>Profil Editör</h2><span class="sub">Sol tık: nokta ekle / sürükle · Sağ tık: noktayı sil · Sağ tık basılı: kaydır · Fare tekerleği: yakınlaştır/uzaklaştır · Sığdır: otomatik ölçek</span></div>
+            <div class="toolbar">
+              <label>Profil Adı <input type="text" value="Standart Test 01" style="width:180px"></label>
+              <button class="btn ghost" id="fitView">Sığdır</button>
+              <button class="btn ghost" id="clearPts">Temizle</button>
+              <button class="btn primary">Kaydet</button>
+            </div>
+            <div class="profil-wrap">
+              <div class="plot-card">
+                <div class="axis-y-title">Kuvvet (<span id="yUnit">kgF</span>)</div>
+                <svg id="plot" viewBox="0 0 700 360" preserveAspectRatio="none"></svg>
+                <div class="axis-x-title">Zaman (s)</div>
+                <div class="plot-tip" id="plotTip"></div>
+              </div>
+              <div class="points-panel">
+                <h3>Noktalar <span class="cnt" id="ptCnt"></span></h3>
+                <div id="pointsList"></div>
+                <div class="pt-hint">Y ekseni birimi başlık çubuğundaki <b>Birim</b> seçimine göre güncellenir.</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- LİFT KONTROL -->
+          <section class="page" id="page-lift" data-screen-label="Lift Kontrol">
+            <div class="page-head"><h2>Lift Kontrol</h2><span class="sub">Çift etkili silindir · port basınçları · senkron çalışma</span></div>
+            <div class="sync-bar">
+              <label class="chk"><input type="checkbox" id="syncMode"><span class="box"></span>Senkron Çalışma</label>
+              <span class="sync-note" id="syncNote">Senkron kapalı — her lift bağımsız çalışır.</span>
+            </div>
+            <div class="lift-row" id="liftRow"></div>
+          </section>
+
+          <!-- TAMPON-KANCA -->
+          <section class="page" id="page-tampon" data-screen-label="Tampon-Kanca Kontrol">
+            <div class="page-head"><h2>Tampon-Kanca Kontrol</h2><span class="sub">Yük vagonu tampon &amp; kanca statik testi — üstten görünüm</span></div>
+            <div class="tk-toolbar">
+              <button class="btn primary" id="openManuel">Manuel Kontrol</button>
+              <button class="btn" id="openProfil">Profil Testi</button>
+              <span class="tk-hint">Load cell silindir milinde · her iki portta basınç transmitteri · karşı tarafta reflect load cell</span>
+            </div>
+            <div class="rig-card"><svg id="rig" viewBox="0 0 1000 360" preserveAspectRatio="xMidYMid meet"></svg></div>
+          </section>
+
+          <!-- SENSÖRLER -->
+          <section class="page" id="page-sensor" data-screen-label="Sensörler">
+            <div class="page-head"><h2>Sensörler</h2><span class="sub">Canlı sensör değerleri</span></div>
+            <div class="subtabs" id="sensorTabs">
+              <button class="subtab active" data-tab="kriko">Kriko Silindirleri</button>
+              <button class="subtab" data-tab="test">Test Silindirleri</button>
+              <button class="subtab" data-tab="genel">Loadcell · Basınç · Valfler</button>
+            </div>
+            <div class="subpage active" id="stab-kriko">
+              <div class="sensor-grid" id="krikoGrid" style="grid-template-columns: repeat(4, 1fr);"></div>
+            </div>
+            <div class="subpage" id="stab-test">
+              <div class="sensor-grid" id="testGrid" style="grid-template-columns: repeat(3, 1fr);"></div>
+            </div>
+            <div class="subpage" id="stab-genel">
+              <div class="sec-title">Reflect Loadcell</div>
+              <div class="sensor-grid" id="loadGrid"></div>
+              <div class="sec-title">Basınç &amp; Sıcaklık</div>
+              <div class="sensor-grid" id="presGrid"></div>
+              <div class="sec-title">Sıfırlama Valfleri</div>
+              <div class="valf-grid" id="valfGrid"></div>
+            </div>
+          </section>
+
+          <!-- ARIZA VE UYARILAR -->
+          <section class="page" id="page-ariza" data-screen-label="Arıza ve Uyarılar">
+            <div class="page-head"><h2>Arıza ve Uyarılar</h2><span class="sub">Aktif kayıt yok</span></div>
+            <div class="empty-state">
+              <div class="es-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 L10 17.5 L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div>Aktif arıza veya uyarı bulunmuyor.</div>
+            </div>
+          </section>
+
+        </main>
+
+        <!-- Motor bar -->
+        <div class="motorbar" data-screen-label="Motor Kontrol">
+          <div class="mtitle">Motor</div>
+          <div class="motor-btns">
+            <div class="pwr stop on-ring" id="motorStop" title="Motoru Durdur">
+              <svg width="20" height="20" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="1.5" fill="currentColor"/></svg>
+            </div>
+            <div class="pwr start dim" id="motorStart" title="Motoru Başlat">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M12 4 L12 12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                <path d="M7 7.5 A6.5 6.5 0 1 0 17 7.5" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="motor-status"><span class="dot err" id="motorDot"></span><span id="motorState">Durduruldu</span></div>
+        </div>
+      </div>
+
+      <!-- Tampon-Kanca modal -->
+      <div class="modal-overlay" id="tkModal" style="display:none;">
+        <div class="modal">
+          <div class="modal-head"><span id="tkModalTitle">Manuel Kontrol</span><button class="modal-close" id="tkModalClose">✕</button></div>
+          <div class="modal-body" id="tkModalBody"></div>
+        </div>
+      </div>
+
+      <!-- Tampon-Kanca canlı test (şeffaf) -->
+      <div class="tk-live" id="tkLive" style="display:none;">
+        <div class="live-panel" id="livePanel">
+          <div class="live-head">
+            <span class="live-title" id="liveTitle">Profil Testi</span>
+            <span class="live-clock" id="liveClock"></span>
+            <div class="live-actions">
+              <button class="btn sm ghost" id="liveHide">Grafiği Gizle</button>
+              <button class="btn sm danger" id="liveStop">Durdur</button>
+              <button class="modal-close" id="liveClose">✕</button>
+            </div>
+          </div>
+          <div class="live-legend" id="liveLegend"></div>
+          <svg class="live-chart" id="liveChart" viewBox="0 0 660 250" preserveAspectRatio="none"></svg>
+          <div class="live-foot"><span id="liveStatus" class="live-status"></span><button class="btn sm" id="liveCsv">Kaydı İndir (CSV)</button></div>
+        </div>
+        <div class="live-pill" id="livePill" style="display:none;">
+          <span class="dot ok"></span><span id="pillText">Kayıt sürüyor</span><span id="pillClock"></span>
+          <button class="btn sm" id="pillShow">Grafiği Göster</button>
+          <button class="btn sm danger" id="pillStop">Durdur</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ===== Units ===== */
+    const UNITS = {
+      kgF: { label:'kgF', factor:1,                  dec:0 },
+      tF:  { label:'tF',  factor:1/1000,             dec:2 },
+      N:   { label:'N',   factor:9.80665,            dec:0 },
+      kN:  { label:'kN',  factor:9.80665/1000,       dec:2 },
+    };
+    let cur = 'kgF';
+    const fmt = (v, dec) => v.toLocaleString('tr-TR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    const fmtForce = (kgf) => fmt(kgf * UNITS[cur].factor, UNITS[cur].dec);
+
+    /* ===== Scale stage ===== */
+    (function () {
+      const stage = document.getElementById('stage'); const W = 1100, H = 650, M = 14;
+      function fit() {
+        const vw = window.innerWidth, vh = window.innerHeight;
+        if (!vw || !vh) { requestAnimationFrame(fit); return; }
+        stage.style.transform = 'scale(' + Math.max(0.1, Math.min(vw/(W+M), vh/(H+M))) + ')';
+      }
+      window.addEventListener('resize', fit); window.addEventListener('load', fit);
+      document.addEventListener('fullscreenchange', ()=>setTimeout(fit,60));
+      const fsBtn = document.getElementById('fsBtn');
+      if(fsBtn) fsBtn.addEventListener('click', ()=>{
+        try {
+          const el = document.documentElement;
+          if(!document.fullscreenElement){ (el.requestFullscreen||el.webkitRequestFullscreen).call(el); }
+          else { (document.exitFullscreen||document.webkitExitFullscreen).call(document); }
+        } catch(_){}
+        setTimeout(fit, 80);
+      });
+      fit(); requestAnimationFrame(fit);
+    })();
+
+    /* ===== Hamburger + router ===== */
+    const hamburger = document.getElementById('hamburger');
+    const menuPanel = document.getElementById('menuPanel');
+    function setMenu(open) {
+      menuPanel.classList.toggle('open', open); hamburger.classList.toggle('open', open);
+      hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    hamburger.addEventListener('click', (e) => { e.stopPropagation(); setMenu(!menuPanel.classList.contains('open')); });
+    document.addEventListener('click', (e) => { if (!menuPanel.contains(e.target) && !hamburger.contains(e.target)) setMenu(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+
+    const tbTitle = document.getElementById('tbTitle');
+    const navBtns = [...menuPanel.querySelectorAll('.nav-btn')];
+    function goTo(page) {
+      navBtns.forEach(b => b.classList.toggle('active', b.dataset.page === page));
+      document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
+      const a = navBtns.find(b => b.dataset.page === page);
+      if (a) tbTitle.textContent = a.querySelector('.lbl').textContent;
+      document.getElementById('content').scrollTop = 0;
+    }
+    navBtns.forEach(b => b.addEventListener('click', () => { goTo(b.dataset.page); setMenu(false); }));
+
+    /* ===== Profil editor plot ===== */
+    const plot = document.getElementById('plot');
+    const plotTip = document.getElementById('plotTip');
+    const pointsList = document.getElementById('pointsList');
+    const ptCnt = document.getElementById('ptCnt');
+    const yUnitEl = document.getElementById('yUnit');
+    const ML=66, MT=14, MR=16, MB=34, PW=700, PH=360;
+    const pL=ML, pR=PW-MR, pT=MT, pB=PH-MB;
+    // movement increment in the CURRENT unit: kgF→100, tF→1, N→10, kN→1
+    const FORCE_STEP = { kgF:100, tF:1, N:10, kN:1 };
+    let viewTmin=0, viewTmax=60, stepT=10;
+    let viewFminU=0, viewFmaxU=60000, stepFU=10000; // force view kept in UNIT space
+    let manualView=false;                            // true once the user pans
+    function niceStep(v){ if(v<=0) return 1; const e=Math.floor(Math.log10(v)); const f=v/Math.pow(10,e);
+      const nf = f<=1?1 : f<=2?2 : f<=2.5?2.5 : f<=5?5 : 10; return nf*Math.pow(10,e); }
+    function axisFit(dataMax, minDom, ticks){ const rough=Math.max(dataMax*1.12, minDom); const step=niceStep(rough/ticks);
+      return { max: Math.ceil(rough/step - 1e-9)*step, step }; }
+    function recomputeDomain(){
+      if(manualView) return;
+      const maxT = points.length ? Math.max(...points.map(p=>p.t)) : 0;
+      const maxFkgf = points.length ? Math.max(...points.map(p=>p.f)) : 0;
+      const u = UNITS[cur].factor;
+      const t = axisFit(maxT, 10, 6); viewTmin=0; viewTmax=t.max; stepT=t.step;
+      const f = axisFit(maxFkgf*u, 5000*u, 5); viewFminU=0; viewFmaxU=f.max; stepFU=f.step;
+    }
+    const X  = t    => pL + (t-viewTmin)/(viewTmax-viewTmin)*(pR-pL);
+    const Y  = fkgf => pB - ((fkgf*UNITS[cur].factor)-viewFminU)/(viewFmaxU-viewFminU)*(pB-pT);
+    const invT = px => viewTmin + (px-pL)/(pR-pL)*(viewTmax-viewTmin);                       // seconds
+    const invF = py => (viewFminU + (pB-py)/(pB-pT)*(viewFmaxU-viewFminU)) / UNITS[cur].factor; // kgF
+    const snapT = t => Math.max(0, Math.round(t));                                  // 1 s
+    function snapF(fkgf){ const u=UNITS[cur].factor, step=FORCE_STEP[cur];
+      return Math.max(0, Math.round((fkgf*u)/step)*step) / u; }
+    let points = [
+      {t:0,f:0},{t:15,f:5000},{t:45,f:25000},{t:70,f:52000},{t:95,f:52000},{t:115,f:0}
+    ];
+
+    function svgCoords(e){
+      const r = plot.getBoundingClientRect();
+      return { px:(e.clientX-r.left)/r.width*PW, py:(e.clientY-r.top)/r.height*PH };
+    }
+    function renderPlot(){
+      recomputeDomain();
+      stepT  = niceStep((viewTmax-viewTmin)/6);
+      stepFU = niceStep((viewFmaxU-viewFminU)/5);
+      const sorted = [...points].sort((a,b)=>a.t-b.t);
+      const dec = UNITS[cur].dec, u = UNITS[cur].factor;
+      let s='';
+      s+=`<defs><clipPath id="plotClip"><rect x="${pL}" y="${pT}" width="${pR-pL}" height="${pB-pT}"/></clipPath></defs>`;
+      const uStart = Math.max(0, Math.ceil(viewFminU/stepFU)*stepFU);
+      for(let uv=uStart; uv<=viewFmaxU+1e-6; uv+=stepFU){ const yy=Y(uv/u); if(yy<pT-0.5||yy>pB+0.5) continue;
+        s+=`<line class="grid" x1="${pL}" y1="${yy}" x2="${pR}" y2="${yy}"/>`;
+        s+=`<text class="ylab" x="${pL-8}" y="${yy+3.5}">${fmt(uv,dec)}</text>`; }
+      const tStart = Math.max(0, Math.ceil(viewTmin/stepT)*stepT);
+      for(let t=tStart; t<=viewTmax+1e-6; t+=stepT){ const xx=X(t); if(xx<pL-0.5||xx>pR+0.5) continue;
+        s+=`<line class="grid" x1="${xx}" y1="${pT}" x2="${xx}" y2="${pB}"/>`;
+        s+=`<text class="xlab" x="${xx}" y="${pB+17}">${fmt(t,0)}</text>`; }
+      s+=`<line class="axis" x1="${pL}" y1="${pT}" x2="${pL}" y2="${pB}"/>`;
+      s+=`<line class="axis" x1="${pL}" y1="${pB}" x2="${pR}" y2="${pB}"/>`;
+      if(sorted.length){
+        const poly = sorted.map(p=>`${X(p.t)},${Y(p.f)}`).join(' ');
+        const fillPts = `${X(sorted[0].t)},${pB} ` + poly + ` ${X(sorted[sorted.length-1].t)},${pB}`;
+        s+=`<g clip-path="url(#plotClip)">`;
+        s+=`<polygon class="proffill" points="${fillPts}"/>`;
+        s+=`<polyline class="profline" points="${poly}"/>`;
+        sorted.forEach(p=>{ s+=`<circle class="ppoint" cx="${X(p.t)}" cy="${Y(p.f)}" r="6" data-i="${points.indexOf(p)}"/>`; });
+        s+=`</g>`;
+      }
+      plot.innerHTML = s;
+    }
+    function renderPoints(){
+      const sorted = [...points].sort((a,b)=>a.t-b.t);
+      ptCnt.textContent = sorted.length + ' nokta';
+      pointsList.innerHTML = sorted.map(p=>{
+        const i = points.indexOf(p);
+        return `<div class="pt-row"><span class="pt-t">${fmt(p.t,0)} s</span><span class="pt-f">${fmtForce(p.f)} ${UNITS[cur].label}</span><button class="pt-del" data-i="${i}" title="Sil">✕</button></div>`;
+      }).join('');
+      pointsList.querySelectorAll('.pt-del').forEach(b=> b.addEventListener('click', ()=>{ points.splice(+b.dataset.i,1); renderAll(); }));
+    }
+    function renderAll(){ renderPlot(); renderPoints(); }
+
+    // interaction
+    let dragI = null, downAdd = null, panning = false, panPrev = null, panMoved = false, panTargetPt = null;
+    plot.addEventListener('contextmenu', (e)=> e.preventDefault());
+    plot.addEventListener('pointerdown', (e)=>{
+      if(e.button === 2){ // right button → pan (drag) or delete point (click)
+        panning = true; panPrev = svgCoords(e); panMoved = false; panTargetPt = e.target.closest('.ppoint');
+        plot.setPointerCapture(e.pointerId); e.preventDefault(); return;
+      }
+      if(e.button !== 0) return;
+      e.preventDefault(); // stop text selection
+      const c = e.target.closest('.ppoint');
+      if(c){ dragI = +c.dataset.i; plot.setPointerCapture(e.pointerId); }
+      else { const {px,py}=svgCoords(e); if(px>=pL&&px<=pR&&py>=pT&&py<=pB){ downAdd={t:snapT(invT(px)),f:snapF(invF(py))}; } }
+    });
+    plot.addEventListener('pointermove', (e)=>{
+      const {px,py}=svgCoords(e);
+      if(panning){
+        const dpx = px - panPrev.px, dpy = py - panPrev.py;
+        if(Math.abs(dpx)+Math.abs(dpy) > 1.5){ panMoved = true; manualView = true; }
+        const dt = dpx*(viewTmax-viewTmin)/(pR-pL);
+        const dfu = dpy*(viewFmaxU-viewFminU)/(pB-pT);
+        viewTmin -= dt; viewTmax -= dt; viewFminU += dfu; viewFmaxU += dfu;
+        panPrev = {px,py}; plotTip.style.display='none'; renderPlot(); return;
+      }
+      // tooltip (snapped to movement grid)
+      if(px>=pL&&px<=pR&&py>=pT&&py<=pB){
+        const t=snapT(invT(px)), f=snapF(invF(py));
+        const card=plot.parentElement, cr=card.getBoundingClientRect();
+        plotTip.style.left=((e.clientX-cr.left)/cr.width*card.offsetWidth)+'px';
+        plotTip.style.top=((e.clientY-cr.top)/cr.height*card.offsetHeight)+'px';
+        plotTip.style.display='block';
+        plotTip.innerHTML = `<div class="r"><span class="k">Zaman</span><span>${fmt(t,0)} s</span></div><div class="r"><span class="k">Kuvvet</span><span>${fmtForce(f)} ${UNITS[cur].label}</span></div>`;
+      } else { plotTip.style.display='none'; }
+      if(dragI!==null){ points[dragI]={t:snapT(invT(px)),f:snapF(invF(py))}; renderAll(); }
+    });
+    plot.addEventListener('pointerup', (e)=>{
+      if(panning){
+        if(!panMoved && panTargetPt){ points.splice(+panTargetPt.dataset.i,1); renderAll(); }
+        panning=false; panPrev=null; panTargetPt=null; return;
+      }
+      if(dragI!==null){ dragI=null; downAdd=null; return; }
+      if(downAdd){ points.push(downAdd); downAdd=null; renderAll(); }
+    });
+    plot.addEventListener('wheel', (e)=>{
+      e.preventDefault();
+      manualView = true;
+      // zoom the WHOLE graph anchored at origin (0,0): scale both axes' max
+      const k = e.deltaY>0 ? 1.15 : 1/1.15;   // wheel down → büyüt (daha yüksek değerlere ulaş), wheel up → yakınlaştır
+      viewTmin = 0; viewFminU = 0;
+      viewTmax  = Math.max(2, viewTmax * k);
+      viewFmaxU = Math.max(UNITS[cur].factor * 2, viewFmaxU * k);
+      renderPlot();
+    }, {passive:false});
+    plot.addEventListener('pointerleave', ()=>{ plotTip.style.display='none'; });
+    plot.addEventListener('dblclick', (e)=>{ const c=e.target.closest('.ppoint'); if(c){ points.splice(+c.dataset.i,1); renderAll(); } });
+    document.getElementById('clearPts').addEventListener('click', ()=>{ points=[]; manualView=false; renderAll(); });
+    document.getElementById('fitView').addEventListener('click', ()=>{ manualView=false; renderAll(); });
+
+    /* ===== Unit selector ===== */
+    let redrawLifts = () => {};
+    let redrawTampon = () => {};
+    document.getElementById('unitSel').addEventListener('change', (e)=>{
+      cur = e.target.value; yUnitEl.textContent = UNITS[cur].label; manualView = false; applyUnit();
+    });
+    function applyUnit(){
+      document.querySelectorAll('.force-val').forEach(el=> el.textContent = fmtForce(+el.dataset.kgf));
+      document.querySelectorAll('.force-unit').forEach(el=> el.textContent = UNITS[cur].label);
+      redrawLifts();
+      redrawTampon();
+      renderAll();
+    }
+
+    /* ===== Double-acting cylinder schematic (compact) ===== */
+    function makeCyl(pos, max, p1, p2){
+      const frac = Math.max(0, Math.min(1, pos/max));
+      const yTop=90, yBot=230;
+      const pistonTop = 210 - frac*110;
+      const pistonH = 16, pistonBot = pistonTop + pistonH;
+      const eyeY = pistonTop - 120;
+      const bx=60, bw=60;
+      const capActive = p1 > p2 + 1;
+      const rodActive = p2 > p1 + 1;
+      return `
+        <svg viewBox="0 -30 150 270">
+          <defs>
+            <linearGradient id="barrelG" x1="0" x2="1">
+              <stop offset="0" stop-color="#cfdcea"/><stop offset="0.18" stop-color="#f6f9fc"/>
+              <stop offset="0.5" stop-color="#e2ebf4"/><stop offset="0.82" stop-color="#f6f9fc"/><stop offset="1" stop-color="#c4d3e4"/>
+            </linearGradient>
+            <linearGradient id="rodG" x1="0" x2="1">
+              <stop offset="0" stop-color="#b9c6d6"/><stop offset="0.32" stop-color="#fbfdff"/>
+              <stop offset="0.62" stop-color="#dde6f0"/><stop offset="1" stop-color="#aebcce"/>
+            </linearGradient>
+          </defs>
+          <rect x="81" y="${eyeY}" width="18" height="${pistonTop-eyeY}" fill="url(#rodG)" stroke="#8fa3ba" stroke-width="0.8"/>
+          <circle cx="90" cy="${eyeY}" r="10" fill="url(#rodG)" stroke="#7c8ea3" stroke-width="1.4"/>
+          <circle cx="90" cy="${eyeY}" r="4.2" fill="#cdd9e6" stroke="#7c8ea3" stroke-width="1"/>
+          <rect x="${bx}" y="${yTop}" width="${bw}" height="${yBot-yTop}" rx="9" fill="url(#barrelG)" stroke="#7e93ab" stroke-width="1.6"/>
+          <rect x="${bx+3}" y="${yTop+3}" width="${bw-6}" height="${Math.max(0,pistonTop-(yTop+3))}" fill="${rodActive?'rgba(63,134,201,.22)':'rgba(63,134,201,.06)'}"/>
+          <rect x="${bx+3}" y="${pistonBot}" width="${bw-6}" height="${Math.max(0,yBot-3-pistonBot)}" fill="${capActive?'rgba(214,80,60,.20)':'rgba(63,134,201,.06)'}"/>
+          <rect x="58" y="${pistonTop}" width="64" height="${pistonH}" rx="2.5" fill="#9fb0c4" stroke="#6e8298" stroke-width="1.2"/>
+          <rect x="58" y="${pistonTop+5.5}" width="64" height="5" fill="#8699af"/>
+          <rect x="${bx-3}" y="84" width="${bw+6}" height="11" rx="3" fill="#cdd9e6" stroke="#7e93ab" stroke-width="1.2"/>
+          <line x1="54" y1="102" x2="${bx}" y2="102" stroke="#6e8298" stroke-width="3"/>
+          <line x1="54" y1="218" x2="${bx}" y2="218" stroke="#6e8298" stroke-width="3"/>
+          <circle cx="52" cy="102" r="6" fill="#fff" stroke="${rodActive?'#c0392b':'#9bb1c7'}" stroke-width="${rodActive?1.8:1.2}"/>
+          <circle cx="52" cy="102" r="1.3" fill="#445a72"/>
+          <line x1="52" y1="102" x2="${rodActive?55:49.5}" y2="${rodActive?99:98.5}" stroke="#c0392b" stroke-width="1"/>
+          <circle cx="52" cy="218" r="6" fill="#fff" stroke="${capActive?'#c0392b':'#9bb1c7'}" stroke-width="${capActive?1.8:1.2}"/>
+          <circle cx="52" cy="218" r="1.3" fill="#445a72"/>
+          <line x1="52" y1="218" x2="${capActive?55:49.5}" y2="${capActive?215:214.5}" stroke="#c0392b" stroke-width="1"/>
+          <g>
+            <text x="23" y="90" text-anchor="middle" font-size="9" font-weight="700" fill="#7b8aa0">MİL (B)</text>
+            <rect x="2" y="93" width="42" height="22" rx="4" fill="#fff" stroke="${rodActive?'#3f86c9':'#b9cbe0'}" stroke-width="${rodActive?1.8:1}"/>
+            <text x="23" y="108" text-anchor="middle" font-size="12" font-weight="700" fill="#244a73">${Math.round(p2)} Bar</text>
+          </g>
+          <g>
+            <text x="23" y="201" text-anchor="middle" font-size="9" font-weight="700" fill="#7b8aa0">KAPAK (A)</text>
+            <rect x="2" y="204" width="42" height="22" rx="4" fill="#fff" stroke="${capActive?'#d6503c':'#b9cbe0'}" stroke-width="${capActive?1.8:1}"/>
+            <text x="23" y="219" text-anchor="middle" font-size="12" font-weight="700" fill="#244a73">${Math.round(p1)} Bar</text>
+          </g>
+        </svg>`;
+    }
+
+    /* ===== Lift (4 units, double-acting cylinders, sync) ===== */
+    (function () {
+      const row = document.getElementById('liftRow');
+      const syncMode = document.getElementById('syncMode');
+      const syncNote = document.getElementById('syncNote');
+      const defs = [120, 80, 150, 60];
+      const MAX = 250;
+      row.innerHTML = defs.map((d,i)=>`
+        <div class="lift-unit" data-idx="${i}">
+          <div class="lift-top">
+            <span class="lift-name">Lift ${i+1}</span>
+            <label class="chk sm"><input type="checkbox" class="lift-sel"><span class="box"></span>Seç</label>
+          </div>
+          <div class="cyl" id="cyl-${i}"></div>
+          <div class="lift-read"><span class="lift-pos">0</span><small>mm</small></div>
+          <div class="lift-lc">Load Cell <b class="lift-lcval">0</b> <span class="lift-lcunit">kgF</span></div>
+          <label class="lift-tgt">Hedef <input type="number" class="lift-target" value="${d}"> mm</label>
+          <button class="btn primary lift-go">Git</button>
+        </div>`).join('');
+
+      const state = [...row.querySelectorAll('.lift-unit')].map(u => ({
+        pos:0, p1:8, p2:8, anim:null,
+        cyl:u.querySelector('.cyl'), posEl:u.querySelector('.lift-pos'),
+        lcVal:u.querySelector('.lift-lcval'), lcUnit:u.querySelector('.lift-lcunit'),
+        target:u.querySelector('.lift-target'), sel:u.querySelector('.lift-sel'), go:u.querySelector('.lift-go')
+      }));
+
+      const draw = s => {
+        s.cyl.innerHTML = makeCyl(s.pos, MAX, s.p1, s.p2);
+        s.posEl.textContent = Math.round(s.pos);
+        const lcKgf = Math.round(s.pos * 350);            // load cell reading (kgF)
+        s.lcVal.textContent = fmtForce(lcKgf);
+        s.lcUnit.textContent = UNITS[cur].label;
+      };
+      state.forEach(draw);
+      redrawLifts = () => state.forEach(draw);
+      const selected = () => state.filter(s => s.sel.checked);
+
+      function animate(s, t){
+        if(s.anim) clearInterval(s.anim);
+        t = Math.max(0, Math.min(MAX, t));
+        s.anim = setInterval(()=>{
+          const d = t - s.pos;
+          if(Math.abs(d) < 2.5){ s.pos = t; s.p1 = 8; s.p2 = 8; draw(s); clearInterval(s.anim); s.anim = null; return; }
+          const up = d > 0;
+          s.pos += up ? 2.5 : -2.5;
+          s.p1 = up ? 95 + Math.random()*16 : 6 + Math.random()*3;   // cap (A) side
+          s.p2 = up ? 6 + Math.random()*3  : 70 + Math.random()*14;  // rod (B) side
+          draw(s);
+        }, 24);
+      }
+
+      function go(s){
+        if(syncMode.checked && s.sel.checked){
+          const t = +s.target.value || 0;
+          selected().forEach(o => { o.target.value = t; animate(o, t); });
+        } else {
+          animate(s, +s.target.value || 0);
+        }
+      }
+
+      state.forEach(s => {
+        s.go.addEventListener('click', () => go(s));
+        s.target.addEventListener('input', () => {
+          if(syncMode.checked && s.sel.checked){
+            const t = s.target.value;
+            selected().forEach(o => { if(o !== s) o.target.value = t; });
+          }
+        });
+        s.sel.addEventListener('change', () => {
+          if(syncMode.checked && s.sel.checked){
+            const others = selected().filter(o => o !== s);
+            if(others.length) s.target.value = others[0].target.value;
+          }
+        });
+      });
+
+      function updateNote(){
+        syncNote.textContent = syncMode.checked
+          ? 'Seçili (☑) liftlerin hedefi eşitlenir; herhangi birine Git denince birlikte hareket eder. Seçili olmayanlar bağımsız çalışır.'
+          : 'Senkron kapalı — her lift bağımsız çalışır.';
+      }
+      syncMode.addEventListener('change', () => {
+        updateNote();
+        if(syncMode.checked){ const sel = selected(); if(sel.length){ const t = sel[0].target.value; sel.forEach(o => o.target.value = t); } }
+      });
+      updateNote();
+    })();
+
+    /* ===== Sensörler ===== */
+    (function () {
+      const tabs = document.getElementById('sensorTabs');
+      tabs.addEventListener('click', (e) => {
+        const b = e.target.closest('.subtab'); if(!b) return;
+        tabs.querySelectorAll('.subtab').forEach(x => x.classList.toggle('active', x === b));
+        document.querySelectorAll('#page-sensor .subpage').forEach(p => p.classList.toggle('active', p.id === 'stab-' + b.dataset.tab));
+      });
+
+      const forceField = (kgf) => `<div class="field"><div class="flabel">Load Cell</div><div class="fval kgf"><span class="force-val" data-kgf="${kgf}">${kgf}</span> <span class="unit force-unit">kgF</span></div></div>`;
+      const posField = (mm, hl) => `<div class="field"><div class="flabel">Pozisyon Sensörü</div><div class="fval${hl?' hl':''}">${mm}<span class="unit">mm</span></div></div>`;
+      const cyl = (name, mm, kgf, hl) => `
+        <div class="card"><div class="card-head"><span>${name}</span></div>
+          <div class="card-body">${posField(mm, hl)}${forceField(kgf)}
+            <div class="valf"><span>Silindir kilitleme valfi</span><span class="dot err"></span></div>
+          </div></div>`;
+      document.getElementById('krikoGrid').innerHTML = [
+        cyl('Kriko Silindir 1', 0, 0), cyl('Kriko Silindir 2', 0, 0),
+        cyl('Kriko Silindir 3', 0, 0), cyl('Kriko Silindir 4', 0, 0)
+      ].join('');
+      document.getElementById('testGrid').innerHTML = [
+        cyl('120T Test Silindir 1', 0, 0), cyl('120T Test Silindir 2', 117, 0, true),
+        cyl('200T Test Silindir', 0, 741)
+      ].join('');
+
+      const loadTile = (name, kgf) => `<div class="sensor-tile"><div class="name"><span class="dot ok"></span>${name}</div><div class="val"><span class="force-val" data-kgf="${kgf}">${kgf}</span><small class="force-unit"> kgF</small></div></div>`;
+      const valTile = (name, val, unit, st) => `<div class="sensor-tile"><div class="name"><span class="dot ${st}"></span>${name}</div><div class="val">${val}<small> ${unit}</small></div></div>`;
+      document.getElementById('loadGrid').innerHTML = [
+        loadTile('Reflect Loadcell 1', 0), loadTile('Reflect Loadcell 2', 0), loadTile('Reflect Loadcell 3', 1037)
+      ].join('');
+      document.getElementById('presGrid').innerHTML = [
+        valTile('Pompa Basınç', 0, 'Bar', 'ok'), valTile('Kriko Hattı Basınç', 0, 'Bar', 'ok'),
+        valTile('Test Hattı Basınç', 0, 'Bar', 'ok'), valTile('Yağ Sıcaklığı', 34, '°C', 'ok')
+      ].join('');
+
+      const valf = (name, st) => `<div class="valf-tile"><span>${name}</span><span class="dot ${st}"></span></div>`;
+      document.getElementById('valfGrid').innerHTML = [
+        valf('Pompa Sıfırlama Valfi', 'err'), valf('Test Hattı Sıfırlama Valfi', 'err'), valf('Kriko Hattı Sıfırlama Valfi', 'err')
+      ].join('');
+    })();
+
+    /* ===== Tampon-Kanca Kontrol ===== */
+    (function () {
+      const rig = document.getElementById('rig');
+      const overlay = document.getElementById('tkModal');
+      const modalTitle = document.getElementById('tkModalTitle');
+      const modalBody = document.getElementById('tkModalBody');
+      const POSMAX = 250;
+      const cyls = [
+        { id:'t1', name:'Tampon Silindir 1', cap:150, type:'tampon', pos:0, force:0, lc:0, reflect:0, p1:0, p2:0, dir:'itme', posTarget:0, forceTarget:0 },
+        { id:'k',  name:'Kanca Silindir',    cap:200, type:'kanca',  pos:0, force:0, lc:0, reflect:0, p1:0, p2:0, dir:'itme', posTarget:0, forceTarget:0 },
+        { id:'t2', name:'Tampon Silindir 2', cap:150, type:'tampon', pos:0, force:0, lc:0, reflect:0, p1:0, p2:0, dir:'itme', posTarget:0, forceTarget:0 },
+      ];
+      const byId = id => cyls.find(c=>c.id===id);
+      const clamp = (v,a,b)=> Math.max(a, Math.min(b,v));
+      function derive(c){
+        c.lc = c.force; c.reflect = c.force*0.97;
+        const w = Math.min(360, c.force/(c.cap*1000)*320);
+        const pull = (c.type==='kanca' && c.dir==='cekme');
+        c.p1 = (pull?0:w) + (c.force>200?5:3);   // cap port (A)
+        c.p2 = (pull?w:0) + (c.force>200?5:3);   // rod port (B)
+      }
+
+      /* ---- pressure gauge (both ports) ---- */
+      function gauge(gx, cy, val, active, tag){
+        const gy = cy-40;
+        return `
+          <line x1="${gx}" y1="${gy+9}" x2="${gx}" y2="${cy-22}" stroke="#7e93ab" stroke-width="2"/>
+          <circle cx="${gx}" cy="${gy}" r="9" fill="#fff" stroke="${active?'#c0392b':'#9bb1c7'}" stroke-width="${active?2:1.3}"/>
+          <circle cx="${gx}" cy="${gy}" r="1.8" fill="#445a72"/>
+          <line x1="${gx}" y1="${gy}" x2="${gx+(active?5:-3)}" y2="${gy-(active?4:6)}" stroke="#c0392b" stroke-width="1.4"/>
+          <text x="${gx}" y="${gy-12}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#2c5a8a">${tag}: ${Math.round(val)}</text>`;
+      }
+
+      /* ---- horizontal double-acting cylinder (Lift-style) ---- */
+      function cylinder(cx, cy, c){
+        const frac = Math.max(0, Math.min(1, c.pos/POSMAX));
+        const bT=cy-22, bB=cy+22, bR=cx+120;
+        const pistonX = cx+14 + frac*86;
+        const rodEnd = bR + 28 + frac*44;
+        const lcX = rodEnd, lcW = 52;
+        const capAct = c.p1>20, rodAct = c.p2>20;
+        const pull = (c.type==='kanca' && c.dir==='cekme');
+        return `
+          <rect x="${cx}" y="${bT}" width="120" height="44" rx="8" fill="url(#tkBarrel)"/>
+          <rect x="${cx+3}" y="${bT+4}" width="${Math.max(0,pistonX-(cx+3))}" height="${bB-bT-8}" fill="${capAct?'rgba(214,80,60,.18)':'rgba(63,134,201,.05)'}"/>
+          <rect x="${pistonX+11}" y="${bT+4}" width="${Math.max(0,bR-3-(pistonX+11))}" height="${bB-bT-8}" fill="${rodAct?'rgba(63,134,201,.22)':'rgba(63,134,201,.05)'}"/>
+          <rect x="${pistonX}" y="${cy-18}" width="11" height="36" rx="2" fill="#9fb0c4" stroke="#6e8298" stroke-width="1.1"/>
+          <rect x="${pistonX+5}" y="${cy-7}" width="${rodEnd-(pistonX+5)}" height="14" fill="url(#tkRod)" stroke="#8fa3ba" stroke-width="0.8"/>
+          <rect x="${bR-4}" y="${cy-13}" width="8" height="26" rx="2" fill="#cdd9e6" stroke="#7e93ab" stroke-width="1.1"/>
+          <rect x="${cx}" y="${bT}" width="120" height="44" rx="8" fill="none" stroke="#7e93ab" stroke-width="1.8"/>
+          <text x="${cx+60}" y="${cy+5}" text-anchor="middle" font-size="13" font-weight="800" fill="${c.type==='kanca'?'#b02525':'#1f4f86'}">${c.cap}T</text>
+          ${gauge(cx+22, cy, c.p1, capAct, 'A')}
+          ${gauge(bR-22, cy, c.p2, rodAct, 'B')}
+          <rect x="${lcX}" y="${cy-17}" width="${lcW}" height="34" rx="3" fill="#eaf2fb" stroke="#5a93cf" stroke-width="1.4"/>
+          <text x="${lcX+lcW/2}" y="${cy-4}" text-anchor="middle" font-size="8" font-weight="700" fill="#6f8aa6">LOAD CELL</text>
+          <text x="${lcX+lcW/2}" y="${cy+10}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#1f4f86">${fmtForce(c.lc)}</text>
+          <line x1="${lcX+lcW}" y1="${cy}" x2="430" y2="${cy}" stroke="#9fb0c4" stroke-width="5"/>
+          <text x="${cx}" y="${cy+38}" font-size="11.5" font-weight="800" fill="#11355c">${c.name} <tspan font-size="9" font-weight="700" fill="#6f8aa6">· ${pull?'çekme':'itme'}</tspan></text>`;
+      }
+      function reflectCell(cy, c){
+        return `
+          <line x1="730" y1="${cy}" x2="782" y2="${cy}" stroke="#9fb0c4" stroke-width="4"/>
+          <rect x="782" y="${cy-17}" width="94" height="34" rx="3" fill="#fff7e0" stroke="#d8c06a" stroke-width="1.4"/>
+          <text x="829" y="${cy-4}" text-anchor="middle" font-size="8" font-weight="700" fill="#9a7b2a">REFLECT LC</text>
+          <text x="829" y="${cy+10}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#7a5a12">${fmtForce(c.reflect)} ${UNITS[cur].label}</text>`;
+      }
+      const LANES = [78, 180, 282];
+      function renderRig(){
+        const defs = `<defs>
+          <linearGradient id="tkBarrel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6f9fc"/><stop offset="0.5" stop-color="#dbe6f1"/><stop offset="1" stop-color="#c4d3e4"/></linearGradient>
+          <linearGradient id="tkRod" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfdae7"/><stop offset="0.4" stop-color="#fbfdff"/><stop offset="1" stop-color="#b3c2d4"/></linearGradient>
+          <linearGradient id="tkWagon" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef3f9"/><stop offset="1" stop-color="#cbd6e3"/></linearGradient>
+        </defs>`;
+        const wagon = `
+          <rect x="430" y="34" width="300" height="292" rx="9" fill="url(#tkWagon)" stroke="#6e8298" stroke-width="2.2"/>
+          <rect x="424" y="34" width="11" height="292" rx="3" fill="#c2cedd" stroke="#6e8298" stroke-width="1.4"/>
+          <rect x="455" y="60" width="250" height="240" rx="6" fill="none" stroke="#bcc9d8" stroke-width="1.4"/>
+          <line x1="580" y1="60" x2="580" y2="300" stroke="#cdd8e5" stroke-width="1.2"/>
+          <text x="580" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#90a4ba" letter-spacing="2">ÜSTTEN GÖRÜNÜŞ</text>
+          <text x="592" y="186" text-anchor="middle" font-size="20" font-weight="800" fill="#56708c" letter-spacing="4">VAGON</text>`;
+        rig.innerHTML = defs + wagon
+          + cyls.map((c,i)=>cylinder(40, LANES[i], c)).join('')
+          + cyls.map((c,i)=>reflectCell(LANES[i], c)).join('');
+      }
+
+      /* ---- value tween ---- */
+      let modalUpdate = ()=>{};
+      function tween(c, prop, target, speed){
+        const key='_'+prop; if(c[key]) clearInterval(c[key]);
+        c[key]=setInterval(()=>{ const d=target-c[prop];
+          if(Math.abs(d)<speed){ c[prop]=target; clearInterval(c[key]); c[key]=null; }
+          else c[prop]+=Math.sign(d)*speed;
+          derive(c); renderRig(); modalUpdate();
+        }, 26);
+      }
+
+      /* ---- modal shell ---- */
+      function showModal(){ overlay.style.display='flex'; }
+      function hideModal(){ overlay.style.display='none'; modalUpdate=()=>{}; }
+      document.getElementById('tkModalClose').addEventListener('click', hideModal);
+      overlay.addEventListener('mousedown', e=>{ if(e.target===overlay) hideModal(); });
+
+      /* ---- Manuel modal ---- */
+      function manuelCard(c){
+        const dirSeg = c.type==='kanca' ? `<div class="ctl-row"><span class="lbl">Yön</span>
+          <div class="segmented sm dir-seg">
+            <button class="seg ${c.dir==='itme'?'active':''}" data-d="itme">İtme</button>
+            <button class="seg ${c.dir==='cekme'?'active':''}" data-d="cekme">Çekme</button>
+          </div></div>` : '';
+        return `<div class="card" data-id="${c.id}">
+          <div class="card-head"><span>${c.name}</span><span class="cap ${c.type==='kanca'?'k':''}">${c.cap}T</span></div>
+          <div class="card-body">
+            <div class="ro-grid">
+              <div class="ro"><span class="rl">Pozisyon</span><span class="rv rv-pos">${Math.round(c.pos)} mm</span></div>
+              <div class="ro"><span class="rl">Load Cell</span><span class="rv kgf rv-lc">${fmtForce(c.lc)} ${UNITS[cur].label}</span></div>
+              <div class="ro"><span class="rl">Basınç A · Kapak</span><span class="rv rv-pa">${Math.round(c.p1)} Bar</span></div>
+              <div class="ro"><span class="rl">Basınç B · Mil</span><span class="rv rv-pb">${Math.round(c.p2)} Bar</span></div>
+            </div>
+            <div class="ctl-row"><span class="lbl">Pozisyon</span><input type="number" class="in-pos" value="${Math.round(c.posTarget)}"> mm <button class="btn sm go-pos">Git</button></div>
+            <div class="ctl-row"><span class="lbl">Kuvvet</span><input type="number" class="in-force" value="${Math.round(c.forceTarget*UNITS[cur].factor)}"> ${UNITS[cur].label} <button class="btn sm go-force">Uygula</button></div>
+            ${dirSeg}
+          </div>
+        </div>`;
+      }
+      function openManuel(){
+        modalTitle.textContent='Manuel Kontrol';
+        modalBody.innerHTML = `<div class="card-grid" style="grid-template-columns:repeat(3,1fr); gap:12px;">${cyls.map(manuelCard).join('')}</div>`;
+        [...modalBody.querySelectorAll('.card')].forEach(card=>{
+          const c=byId(card.dataset.id);
+          card.querySelector('.go-pos').addEventListener('click', ()=>{ c.posTarget=clamp(+card.querySelector('.in-pos').value||0,0,POSMAX); tween(c,'pos',c.posTarget,3); });
+          card.querySelector('.go-force').addEventListener('click', ()=>{ const u=UNITS[cur].factor; c.forceTarget=clamp((+card.querySelector('.in-force').value||0)/u,0,c.cap*1000); tween(c,'force',c.forceTarget,c.cap*1000/110); });
+          const dseg=card.querySelector('.dir-seg');
+          if(dseg) dseg.addEventListener('click', e=>{ const b=e.target.closest('.seg'); if(!b) return; c.dir=b.dataset.d; dseg.querySelectorAll('.seg').forEach(x=>x.classList.toggle('active',x===b)); derive(c); renderRig(); });
+        });
+        modalUpdate = ()=>{ [...modalBody.querySelectorAll('.card')].forEach(card=>{ const c=byId(card.dataset.id);
+          const set=(s,v)=>{ const el=card.querySelector(s); if(el) el.textContent=v; };
+          set('.rv-pos',Math.round(c.pos)+' mm'); set('.rv-lc',fmtForce(c.lc)+' '+UNITS[cur].label);
+          set('.rv-pa',Math.round(c.p1)+' Bar'); set('.rv-pb',Math.round(c.p2)+' Bar'); }); };
+        showModal();
+      }
+
+      /* ---- Profiles ---- */
+      const TK_PROFILES = {
+        'Editör Profili': () => points.slice(),
+        'Tampon 150T Statik': [{t:0,f:0},{t:12,f:60000},{t:40,f:147000},{t:70,f:147000},{t:85,f:0}],
+        'Kanca 200T Çekme':   [{t:0,f:0},{t:14,f:90000},{t:48,f:196000},{t:80,f:196000},{t:95,f:0}],
+      };
+      function profForce(pts,t){ if(!pts.length) return 0; if(t<=pts[0].t) return pts[0].f; const last=pts[pts.length-1];
+        if(t>=last.t) return last.f;
+        for(let i=0;i<pts.length-1;i++){ const a=pts[i],b=pts[i+1]; if(t>=a.t&&t<=b.t){ const r=(t-a.t)/((b.t-a.t)||1); return a.f+(b.f-a.f)*r; } } return last.f; }
+      /* ---- live recording + chart ---- */
+      const live = {
+        el: document.getElementById('tkLive'), panel: document.getElementById('livePanel'),
+        pill: document.getElementById('livePill'), title: document.getElementById('liveTitle'),
+        clock: document.getElementById('liveClock'), legend: document.getElementById('liveLegend'),
+        chart: document.getElementById('liveChart'), status: document.getElementById('liveStatus'),
+        pillClock: document.getElementById('pillClock'), pillText: document.getElementById('pillText'),
+      };
+      const COLORS = ['#2f7fd1','#c0392b','#1f9e34'];
+      let testTimer=null;
+      const recState = { running:false, t:0, maxT:0, targets:[], rec:{}, name:'', yMax:0 };
+
+      function drawLive(){
+        const PWv=660, PHv=250, L=58, R=14, T=12, B=26;
+        const pL=L, pR=PWv-R, pT=T, pB=PHv-B;
+        const maxT=recState.maxT||1, yMax=recState.yMax||1, u=UNITS[cur].factor, dec=UNITS[cur].dec;
+        const X=t=>pL+(t/maxT)*(pR-pL), Y=k=>pB-(k/yMax)*(pB-pT);
+        let s='';
+        for(let i=0;i<=4;i++){ const k=yMax*i/4, yy=Y(k);
+          s+=`<line class="g" x1="${pL}" y1="${yy}" x2="${pR}" y2="${yy}"/>`;
+          s+=`<text x="${pL-6}" y="${yy+3}" text-anchor="end">${fmt(k*u,dec)}</text>`; }
+        for(let i=0;i<=5;i++){ const t=maxT*i/5, xx=X(t);
+          s+=`<line class="g" x1="${xx}" y1="${pT}" x2="${xx}" y2="${pB}"/>`;
+          s+=`<text x="${xx}" y="${pB+15}" text-anchor="middle">${fmt(t,0)}</text>`; }
+        s+=`<line class="ax" x1="${pL}" y1="${pT}" x2="${pL}" y2="${pB}"/><line class="ax" x1="${pL}" y1="${pB}" x2="${pR}" y2="${pB}"/>`;
+        recState.targets.forEach((c,i)=>{ const col=COLORS[i%COLORS.length], arr=recState.rec[c.id]||[];
+          if(arr.length){
+            s+=`<polyline points="${arr.map(p=>`${X(p.t)},${Y(p.ref)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="1.6" stroke-dasharray="5 4" opacity="0.7"/>`;
+            s+=`<polyline points="${arr.map(p=>`${X(p.t)},${Y(p.lc)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="2.2"/>`;
+          } });
+        live.chart.innerHTML=s;
+      }
+      function drawLegend(){
+        live.legend.innerHTML = recState.targets.map((c,i)=>{ const col=COLORS[i%COLORS.length];
+          return `<span><i style="border-color:${col}"></i>${c.name} · LC</span><span><i class="dash" style="border-color:${col}"></i>${c.name} · Reflect</span>`;
+        }).join('');
+      }
+      function showGraph(v){ live.panel.style.display=v?'block':'none'; live.pill.style.display=v?'none':'flex'; }
+      function buildCSV(){
+        const ids=recState.targets.map(c=>c.id);
+        let header='Zaman(s)'; recState.targets.forEach(c=>{ header+=`,${c.name} LC(kgF),${c.name} Reflect(kgF)`; });
+        const rows=[header], base=recState.rec[ids[0]]||[];
+        base.forEach((s0,idx)=>{ let row=s0.t.toFixed(1);
+          recState.targets.forEach(c=>{ const a=(recState.rec[c.id]||[])[idx]||{lc:0,ref:0}; row+=`,${Math.round(a.lc)},${Math.round(a.ref)}`; });
+          rows.push(row); });
+        return rows.join('\n');
+      }
+      function downloadCSV(){ const blob=new Blob([buildCSV()],{type:'text/csv;charset=utf-8;'}), url=URL.createObjectURL(blob);
+        const a=document.createElement('a'); a.href=url; a.download='profil_kaydi.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); }
+
+      function startTest(pts, tg, name){
+        if(testTimer){ clearInterval(testTimer); testTimer=null; }
+        const maxT=pts.length?pts[pts.length-1].t:0;
+        recState.running=true; recState.t=0; recState.maxT=maxT; recState.targets=tg; recState.name=name;
+        recState.rec={}; tg.forEach(c=>recState.rec[c.id]=[]);
+        recState.yMax = Math.max(...tg.map(c=>c.cap*1000));
+        live.title.textContent='Profil Testi — '+name; live.status.textContent='Çalışıyor';
+        live.pillText.textContent='Kayıt sürüyor'; drawLegend(); showGraph(true);
+        live.el.style.display='flex'; overlay.style.display='none';
+        let t=0;
+        testTimer=setInterval(()=>{
+          t+=0.4; recState.t=t; const f=profForce(pts,t);
+          tg.forEach(c=>{ c.force=Math.min(f,c.cap*1000); derive(c); recState.rec[c.id].push({t, lc:c.lc, ref:c.reflect}); });
+          renderRig();
+          const cl=t.toFixed(1)+' / '+maxT+' s'; live.clock.textContent=cl; live.pillClock.textContent=cl;
+          if(live.panel.style.display!=='none') drawLive();
+          if(t>=maxT){ clearInterval(testTimer); testTimer=null; recState.running=false;
+            live.status.textContent='Tamamlandı — kayıt hazır'; live.pillText.textContent='Kayıt tamamlandı'; drawLive(); }
+        }, 80);
+      }
+      function stopTest(){
+        if(testTimer){ clearInterval(testTimer); testTimer=null; } recState.running=false;
+        recState.targets.forEach(c=>{ c.force=0; derive(c); }); renderRig();
+        live.status.textContent='Durduruldu — kısmi kayıt'; live.pillText.textContent='Durduruldu'; drawLive();
+      }
+      document.getElementById('liveHide').addEventListener('click', ()=>showGraph(false));
+      document.getElementById('pillShow').addEventListener('click', ()=>{ showGraph(true); drawLive(); });
+      document.getElementById('liveStop').addEventListener('click', stopTest);
+      document.getElementById('pillStop').addEventListener('click', stopTest);
+      document.getElementById('liveCsv').addEventListener('click', downloadCSV);
+      document.getElementById('liveClose').addEventListener('click', ()=>{ live.el.style.display='none'; });
+
+      function openProfil(){
+        modalTitle.textContent='Profil Testi';
+        modalBody.innerHTML = `
+          <div class="card" style="max-width:560px; margin:0 auto;">
+            <div class="card-head"><span>Profil Uygulama</span></div>
+            <div class="card-body" style="gap:12px;">
+              <div class="ctl-row"><span class="lbl" style="width:104px;">Profil</span><select id="pf-sel" style="flex:1; height:28px;">${Object.keys(TK_PROFILES).map(k=>`<option>${k}</option>`).join('')}</select></div>
+              <div class="ctl-row"><span class="lbl" style="width:104px;">Uygulama</span>
+                <div class="segmented sm" id="pf-apply"><button class="seg active" data-a="teker">Teker Teker</button><button class="seg" data-a="senkron">Tampon Senkron</button></div>
+              </div>
+              <div class="ctl-row" id="pf-cylrow"><span class="lbl" style="width:104px;">Silindir</span>
+                <select id="pf-cyl" style="flex:1; height:28px;"><option value="t1">Tampon Silindir 1</option><option value="k">Kanca Silindir</option><option value="t2">Tampon Silindir 2</option></select>
+              </div>
+              <div class="ctl-row"><span class="lbl" style="width:104px;">Kanca Yönü</span>
+                <div class="segmented sm" id="pf-dir"><button class="seg active" data-d="itme">İtme</button><button class="seg" data-d="cekme">Çekme</button></div>
+              </div>
+              <div style="display:flex; gap:10px;"><button class="btn primary" id="pf-start">Başlat</button><button class="btn danger" id="pf-stop">Durdur</button></div>
+              <div class="tk-status"><span class="dot err" id="pf-dot"></span><span id="pf-stat">Hazır</span><span id="pf-clock" style="margin-left:auto; color:#6f8aa6; font-weight:600;"></span></div>
+              <div class="tk-prog"><i id="pf-bar"></i></div>
+            </div>
+          </div>`;
+        const sel=modalBody.querySelector('#pf-sel'), applyS=modalBody.querySelector('#pf-apply'),
+              cylRow=modalBody.querySelector('#pf-cylrow'), cylSel=modalBody.querySelector('#pf-cyl'),
+              dirS=modalBody.querySelector('#pf-dir'), statEl=modalBody.querySelector('#pf-stat'),
+              dotEl=modalBody.querySelector('#pf-dot'), clockEl=modalBody.querySelector('#pf-clock'), barEl=modalBody.querySelector('#pf-bar');
+        let applyMode='teker';
+        applyS.addEventListener('click', e=>{ const b=e.target.closest('.seg'); if(!b)return; applyMode=b.dataset.a; applyS.querySelectorAll('.seg').forEach(x=>x.classList.toggle('active',x===b)); cylRow.style.display=applyMode==='senkron'?'none':'flex'; });
+        dirS.addEventListener('click', e=>{ const b=e.target.closest('.seg'); if(!b)return; dirS.querySelectorAll('.seg').forEach(x=>x.classList.toggle('active',x===b)); });
+        const targets=()=> applyMode==='senkron' ? [byId('t1'),byId('t2')] : [byId(cylSel.value)];
+        function setStat(txt,st){ if(statEl){statEl.textContent=txt;} if(dotEl){dotEl.className='dot '+(st||'err');} }
+        modalBody.querySelector('#pf-start').addEventListener('click', ()=>{
+          const v=TK_PROFILES[sel.value], pts=[...(typeof v==='function'?v():v)].sort((a,b)=>a.t-b.t);
+          const tg=targets(), kdir=dirS.querySelector('.seg.active').dataset.d;
+          tg.forEach(c=>{ if(c.type==='kanca') c.dir=kdir; });
+          startTest(pts, tg, sel.value);
+        });
+        modalBody.querySelector('#pf-stop').addEventListener('click', stopTest);
+        modalUpdate = ()=>{};
+        showModal();
+      }
+
+      document.getElementById('openManuel').addEventListener('click', openManuel);
+      document.getElementById('openProfil').addEventListener('click', openProfil);
+
+      /* ---- init ---- */
+      redrawTampon = () => { renderRig(); if(overlay.style.display!=='none' && modalTitle.textContent==='Manuel Kontrol') openManuel(); };
+      cyls.forEach(derive);
+      renderRig();
+    })();
+
+    /* ===== Motor ===== */
+    (function () {
+      const start=document.getElementById('motorStart'), stop=document.getElementById('motorStop'),
+            dot=document.getElementById('motorDot'), state=document.getElementById('motorState');
+      function set(on){
+        start.classList.toggle('dim',!on); start.classList.toggle('on-ring',on);
+        stop.classList.toggle('dim',on); stop.classList.toggle('on-ring',!on);
+        dot.className='dot '+(on?'ok':'err'); state.textContent=on?'Çalışıyor':'Durduruldu';
+      }
+      start.addEventListener('click',()=>set(true)); stop.addEventListener('click',()=>set(false));
+    })();
+
+    /* ===== Profil: add step (kept for table-less version) ===== */
+    renderAll();
+    applyUnit();
+  </script>
+</body>
+</html>
+
+<style id="__om-edit-overrides">
+#cyl-1 >svg { opacity: 0.05 !important }
+#cyl-1 >svg { opacity: 0.5 !important }
+#cyl-1 >svg { opacity: 0.52 !important }
+#cyl-1 >svg { opacity: 0.05 !important }
+#cyl-1 >svg { opacity: 0.1 !important }
+#cyl-1 >svg { opacity: 0.2 !important }
+#cyl-1 >svg { opacity: 0.3 !important }
+#cyl-1 >svg { opacity: 0.4 !important }
+#cyl-1 >svg { opacity: 0.01 !important }
+#cyl-1 >svg { opacity: 1 !important }
+</style>
